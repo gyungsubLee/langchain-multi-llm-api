@@ -121,6 +121,26 @@ def test_v4_endpoints():
         except Exception as e:
             print(f"   Error: {e}\n")
 
+    # 벡터 DB 관리 테스트
+    print("\n" + "-"*60)
+    print("📚 Vector DB Management Tests")
+    print("-"*60)
+
+    # 1. DB 목록 조회
+    try:
+        url = f"{BASE_URL}/v4/list-dbs"
+        print(f"\n-> GET {url}")
+        resp = client.get(url)
+        print(f"   Response ({resp.status_code}):")
+        result = resp.json()
+        print(f"     Vector DBs: {result.get('count', 0)} found")
+        if result.get('databases'):
+            for db in result['databases'][:3]:  # 처음 3개만 표시
+                print(f"       - {db['name']} ({db.get('size_bytes', 0)} bytes)")
+        print()
+    except Exception as e:
+        print(f"   Error: {e}\n")
+
 
 def main():
     """메인 실행 함수"""

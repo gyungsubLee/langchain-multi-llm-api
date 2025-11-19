@@ -81,8 +81,17 @@ LangChain의 PromptTemplate과 ChatPromptTemplate을 활용한 고급 기능입�
 - ✅ 최신 LangChain API 사용 (`invoke()` 메서드)
 - ✅ `RecursiveCharacterTextSplitter` 적용
 - ✅ `create_retrieval_chain` 최신 방식
-- ✅ FAISS 벡터 스토어
+- ✅ FAISS 벡터 스토어 + 로컬 영구 저장
 - ✅ OpenAI Embeddings
+- ✅ 벡터 DB 관리 기능 (생성, 조회, 삭제)
+
+**엔드포인트:**
+1. `POST /v4/upload-pdf` - PDF 업로드 및 벡터 DB 생성
+2. `POST /v4/search` - 벡터 DB에서 문서 검색
+3. `POST /v4/rag` - RAG 기반 질의응답
+4. `GET /v4/list-dbs` - 저장된 벡터 DB 목록 조회
+5. `GET /v4/db-info/{db_name}` - 특정 벡터 DB 정보
+6. `DELETE /v4/delete-db/{db_name}` - 벡터 DB 삭제
 
 ---
 
@@ -253,6 +262,159 @@ curl -X POST http://127.0.0.1:8000/v2/translate \
 
 ---
 
+### 🔍 V4 - Retrieval & RAG (로컬 벡터 DB)
+
+**로컬 벡터 DB 생성 및 관리**
+
+#### 1️⃣ PDF 업로드 및 벡터 DB 생성
+
+```bash
+# MOCK 모드는 불가능, 실제 API 키 필요
+curl -X POST "http://127.0.0.1:8000/v4/upload-pdf?db_name=my_docs" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@/path/to/document.pdf"
+```
+
+**응답:**
+```json
+{
+  "status": "success",
+  "filename": "document.pdf",
+  "db_name": "my_docs",
+  "pages": 15,
+  "chunks": 42,
+  "method": "RecursiveCharacterTextSplitter",
+  "chunk_size": 1000,
+  "chunk_overlap": 200,
+  "saved_to": "vector_db/my_docs"
+}
+```
+
+**저장 위치:** `vector_db/my_docs/` 디렉토리에 FAISS 인덱스 파일 생성
+
+---
+
+#### 2️⃣ 벡터 DB에서 문서 검색
+
+```bash
+curl -X POST http://127.0.0.1:8000/v4/search \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "소개팅 주선자의 역할",
+    "top_k": 3,
+    "db_name": "my_docs"
+  }'
+```
+
+**응답:**
+```json
+[
+  {
+    "content": "소개팅 주선자는 양측의 성향을 파악하고...",
+    "metadata": {"source": "document.pdf", "page": 3},
+    "score": null
+  },
+  ...
+]
+```
+
+---
+
+#### 3️⃣ RAG 질의응답
+
+```bash
+curl -X POST http://127.0.0.1:8000/v4/rag \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "소개팅에서 주의할 점은?",
+    "top_k": 2,
+    "db_name": "my_docs"
+  }'
+```
+
+**응답:**
+```json
+{
+  "query": "소개팅에서 주의할 점은?",
+  "answer": "문서에 따르면, 소개팅에서는...",
+  "source_documents": [
+    {
+      "content": "...",
+      "metadata": {"source": "document.pdf", "page": 5},
+      "score": null
+    }
+  ]
+}
+```
+
+---
+
+#### 4️⃣ 벡터 DB 목록 조회
+
+```bash
+curl http://127.0.0.1:8000/v4/list-dbs
+```
+
+**응답:**
+```json
+{
+  "count": 2,
+  "databases": [
+    {
+      "name": "my_docs",
+      "path": "vector_db/my_docs",
+      "size_bytes": 1048576,
+      "created": 1700000000.0,
+      "modified": 1700000000.0
+    },
+    ...
+  ]
+}
+```
+
+---
+
+#### 5️⃣ 벡터 DB 정보 조회
+
+```bash
+curl http://127.0.0.1:8000/v4/db-info/my_docs
+```
+
+**응답:**
+```json
+{
+  "name": "my_docs",
+  "path": "vector_db/my_docs",
+  "files": {
+    "index.faiss": 524288,
+    "index.pkl": 102400
+  },
+  "total_size_bytes": 626688,
+  "total_size_mb": 0.6,
+  "created": 1700000000.0,
+  "modified": 1700000000.0
+}
+```
+
+---
+
+#### 6️⃣ 벡터 DB 삭제
+
+```bash
+curl -X DELETE http://127.0.0.1:8000/v4/delete-db/my_docs
+```
+
+**응답:**
+```json
+{
+  "status": "success",
+  "message": "Vector DB 'my_docs' has been deleted",
+  "deleted_path": "vector_db/my_docs"
+}
+```
+
+---
+
 ## 🌐 브라우저에서 API 문서 확인
 
 서버 실행 후 브라우저에서 접속:
@@ -309,14 +471,18 @@ OPENAI_MODEL=gpt-4o  # 선택사항, 기본값: gpt-4o
 │       ├── v1/
 │       │   ├── __init__.py
 │       │   └── llm.py            # V1: 기본 GPT/Gemini/Claude
-│       └── v2/
+│       ├── v2/
+│       │   ├── __init__.py
+│       │   └── prompt.py         # V2: Prompt Template 기능
+│       └── v4/
 │           ├── __init__.py
-│           └── prompt.py         # V2: Prompt Template 기능
+│           └── retrieval.py      # V4: Retrieval & RAG (로컬 벡터 DB)
+├── vector_db/                     # 로컬 벡터 DB 저장소 (gitignore)
 ├── Chapter 7. LangChain/          # LangChain 학습 노트북
 ├── .env.example                   # 환경 변수 템플릿
 ├── .gitignore                     # Git 제외 파일 설정
 ├── requirements.txt               # Python 패키지 목록
-├── run_tests.py                   # 자동 테스트 스크립트 (v1 + v2)
+├── run_tests.py                   # 자동 테스트 스크립트 (v1 + v2 + v4)
 └── README.md
 ```
 

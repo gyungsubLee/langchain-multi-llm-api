@@ -66,6 +66,9 @@ htmlcov/
 *.sqlite
 *.sqlite3
 
+# Vector Database
+vector_db/
+
 # Temporary files
 *.tmp
 *.bak
