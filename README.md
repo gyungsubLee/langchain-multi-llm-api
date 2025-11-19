@@ -35,7 +35,7 @@ FastAPI와 LangChain을 사용하여 여러 LLM 모델을 제공하는 API 서�
 
 ---
 
-### **V2 - Prompt Template** (신규!)
+### **V2 - Prompt Template**
 
 LangChain의 PromptTemplate과 ChatPromptTemplate을 활용한 고급 기능입니다.
 
@@ -50,6 +50,39 @@ LangChain의 PromptTemplate과 ChatPromptTemplate을 활용한 고급 기능입�
   "target_lang": "영어"
 }
 ```
+
+---
+
+### **V4 - Retrieval & RAG** (신규!)
+
+최신 LangChain으로 마이그레이션된 문서 검색 및 RAG (Retrieval-Augmented Generation) 기능입니다.
+
+- `POST /v4/search` — 벡터 데이터베이스 문서 검색
+- `POST /v4/rag` — RAG 기반 질의응답
+- `POST /v4/upload-pdf` — PDF 업로드 및 벡터 DB 생성
+
+**검색 요청 예시:**
+```json
+{
+  "query": "소개팅 주선자의 역할",
+  "top_k": 3
+}
+```
+
+**RAG 요청 예시:**
+```json
+{
+  "query": "소개팅에서 주의할 점은?",
+  "top_k": 2
+}
+```
+
+**주요 특징:**
+- ✅ 최신 LangChain API 사용 (`invoke()` 메서드)
+- ✅ `RecursiveCharacterTextSplitter` 적용
+- ✅ `create_retrieval_chain` 최신 방식
+- ✅ FAISS 벡터 스토어
+- ✅ OpenAI Embeddings
 
 ---
 
@@ -376,7 +409,16 @@ which python
 
 ## 📝 버전 관리
 
-### v2.0.0 (현재)
+### v4.0.0 (현재)
+- ✅ v4: Retrieval & RAG 기능 추가
+- ✅ 최신 LangChain API로 마이그레이션
+  - `invoke()` 메서드 사용
+  - `RecursiveCharacterTextSplitter` 적용
+  - `create_retrieval_chain` 최신 방식
+- ✅ FAISS 벡터 스토어 지원
+- ✅ PDF 업로드 및 벡터 DB 생성 기능
+
+### v2.0.0
 - ✅ API 버전 관리 시스템 도입
 - ✅ v1: 기본 LLM 호출 엔드포인트
 - ✅ v2: Prompt Template 기능 추가

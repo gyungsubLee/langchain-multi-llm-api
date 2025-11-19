@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 LangChain Multi-LLM API 테스트 스크립트
-v1, v2 엔드포인트 자동 테스트
+v1, v2, v4 엔드포인트 자동 테스트
 """
 import httpx
 import subprocess
@@ -83,6 +83,45 @@ def test_v2_endpoints():
             print(f"   Error: {e}\n")
 
 
+def test_v4_endpoints():
+    """v4 엔드포인트 테스트 (Retrieval & RAG)"""
+    print("\n" + "=" * 60)
+    print("V4 엔드포인트 테스트 (Retrieval & RAG)")
+    print("=" * 60)
+
+    client = httpx.Client(timeout=20.0)
+
+    v4_tests = [
+        ("/v4/search", {"query": "소개팅 주선자의 역할", "top_k": 3}),
+        ("/v4/rag", {"query": "소개팅에서 주의할 점은?", "top_k": 2}),
+    ]
+
+    for endpoint, payload in v4_tests:
+        url = f"{BASE_URL}{endpoint}"
+        print(f"\n-> POST {url}")
+        print(f"   payload={payload}")
+
+        try:
+            resp = client.post(url, json=payload)
+            print(f"   Response ({resp.status_code}):")
+            response_data = resp.json()
+
+            if endpoint == "/v4/search":
+                # 검색 결과 출력
+                print(f"     검색된 문서 수: {len(response_data)}")
+                for i, doc in enumerate(response_data[:2]):  # 처음 2개만
+                    print(f"     [{i+1}] {doc['content'][:80]}...")
+            elif endpoint == "/v4/rag":
+                # RAG 결과 출력
+                print(f"     Query: {response_data['query']}")
+                print(f"     Answer: {response_data['answer'][:100]}...")
+                print(f"     Sources: {len(response_data['source_documents'])}개 문서")
+
+            print()
+        except Exception as e:
+            print(f"   Error: {e}\n")
+
+
 def main():
     """메인 실행 함수"""
     print("=" * 60)
@@ -113,6 +152,9 @@ def main():
 
         # v2 엔드포인트 테스트
         test_v2_endpoints()
+
+        # v4 엔드포인트 테스트
+        test_v4_endpoints()
 
         print("\n" + "=" * 60)
         print("✅ 모든 테스트 완료!")

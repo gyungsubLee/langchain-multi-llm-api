@@ -2,15 +2,23 @@
 fastapi==0.109.0
 uvicorn[standard]==0.27.0
 python-dotenv==1.0.0
+python-multipart==0.0.20
 
 # LangChain 및 AI 모델
 langchain==0.1.4
 langchain-openai==0.0.5
 langchain-google-genai==0.0.6
 langchain-anthropic==0.1.1
+langchain-community==0.0.20
+langchain-text-splitters==0.0.1
 
 # HTTP 클라이언트
 httpx==0.26.0
+
+# 벡터 스토어 및 문서 처리
+faiss-cpu==1.8.0
+tiktoken==0.5.2
+pypdf==4.2.0
 
 # 테스트
 pytest==7.4.4
